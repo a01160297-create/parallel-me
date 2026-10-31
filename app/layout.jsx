@@ -1,4 +1,4 @@
-import 'tailwindcss/tailwind.css'
+import './globals.css'
 
 export const metadata = {
   title: 'Parallel Me - 並行世界の私からの手紙',
@@ -8,7 +8,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ja">
-      <body>{children}</body>
+      <body className="bg-slate-900 text-slate-200 min-h-screen">{children}</body>
     </html>
   )
 }

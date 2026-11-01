@@ -1,127 +1,125 @@
 "use client";
+import { useState, useEffect, useRef } from "react";
 
-import { useState, useEffect } from "react";
-
-export default function ParallelMe() {
-  const [step, setStep] = useState(1);
+export default function ParallelLetter() {
   const [formData, setFormData] = useState({
-    pronoun: "", branch: "", place: "", secret: "", currentLife: "", missing: ""
+    pronoun: "", branch: "", place: "", secret: "", currentLife: "", missing: "", habit: "", trueMotive: ""
   });
-  const [letter, setLetter] = useState("");
-  const [displayedLetter, setDisplayedLetter] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState("idle"); // idle, receiving, tuning, arrived, reading
+  const [letterText, setLetterText] = useState("");
+  const [displayedText, setDisplayedText] = useState("");
 
-  // タイプライター風の文字送り
+  // タイプライター演出
   useEffect(() => {
-    if (step === 3 && letter) {
+    if (status === "reading" && letterText) {
       let i = 0;
+      setDisplayedText("");
       const timer = setInterval(() => {
-        setDisplayedLetter(letter.substring(0, i));
+        setDisplayedText(letterText.slice(0, i));
         i++;
-        if (i > letter.length) clearInterval(timer);
-      }, 80);
+        if (i > letterText.length) clearInterval(timer);
+      }, 50); // 1文字50ms
       return () => clearInterval(timer);
     }
-  }, [step, letter]);
+  }, [status, letterText]);
 
-  const handleGenerate = async () => {
-    setIsLoading(true);
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus("receiving");
+    
+    // ローディング演出の切り替え
+    setTimeout(() => setStatus("tuning"), 2000);
+    
     try {
-      const response = await fetch("/api/generate", {
+      const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      const data = await response.json();
-      setLetter(data.text);
-      setStep(3); // 手紙表示画面へ
+      const data = await res.json();
+      
+      if (data.text) {
+        setLetterText(data.text);
+        setStatus("arrived");
+        setTimeout(() => setStatus("reading"), 1500);
+      } else {
+        setStatus("idle");
+      }
     } catch (error) {
-      alert("通信エラーが発生しました。");
+      console.error(error);
+      setStatus("idle");
     }
-    setIsLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-200 font-serif flex flex-col items-center p-6 selection:bg-slate-700">
-      <main className="w-full max-w-xl z-10 flex flex-col items-center mt-12 mb-20">
-        
-        {step === 1 && (
-          <div className="w-full flex flex-col items-center opacity-0 animate-[fadeIn_2s_ease-in_forwards]">
-            <h1 className="text-3xl tracking-widest mb-12 text-slate-100 font-light">Parallel Me</h1>
-            <p className="text-sm text-slate-400 mb-12 text-center leading-loose">
-              並行世界は、存在します。<br/>
-              選ばなかった道を歩むあなたと、<br/>少しだけ話をしてみませんか。
-            </p>
-            <button
-              onClick={() => setStep(2)}
-              className="px-8 py-3 border border-slate-600 rounded text-slate-300 hover:bg-slate-800 transition-colors tracking-widest text-sm"
-            >
-              通信を開始する
-            </button>
-          </div>
-        )}
+    <div className="min-h-screen bg-[#0f1115] text-gray-300 font-sans p-6 flex flex-col items-center justify-center selection:bg-gray-700">
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Zen+Kurenaido&display=swap');
+        .font-letter { font-family: 'Zen Kurenaido', sans-serif; }
+        .paper-texture {
+          background-color: #e9e2d0;
+          background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+        }
+      `}</style>
 
-        {step === 2 && (
-          <div className="w-full flex flex-col gap-8 opacity-0 animate-[fadeIn_1s_ease-in_forwards]">
-            <p className="text-center text-slate-400 text-xs tracking-widest mb-4">-- 記憶の同期プロセス --</p>
-            
+      <div className="w-full max-w-xl">
+        {status === "idle" && (
+          <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
             <div className="space-y-6">
               {[
-                { label: "1. あなたの一人称は？", key: "pronoun", placeholder: "私 / 僕 / 俺" },
-                { label: "2. もしあの時、別の道を選んでいたら？", key: "branch", placeholder: "例: 吹奏楽部ではなく帰宅部だったら" },
-                { label: "3. 当時、よく入り浸っていた場所や匂いは？", key: "place", placeholder: "例: 錆びたフェンスのある駐輪場" },
-                { label: "4. 当時、誰にも言えなかった小さな悩みは？", key: "secret", placeholder: "例: 自分が空っぽに思えたこと" },
-                { label: "5. 今のあなたは、どんな日々を送っていますか？", key: "currentLife", placeholder: "例: 毎日パソコンに向かって仕事をしている" },
-                { label: "6. 今の生活で、ふと「足りないな」と感じるものは？", key: "missing", placeholder: "例: 心から熱中できる時間" }
-              ].map((q, idx) => (
-                <div key={idx} className="flex flex-col gap-2">
-                  <label className="text-sm text-slate-300">{q.label}</label>
+                { name: "pronoun", label: "普段のあなたの、一人称は？", placeholder: "俺、私、僕など" },
+                { name: "branch", label: "あの日、選ばなかった道は？", placeholder: "あの会社を辞めなかったら、あの人に告白していたら" },
+                { name: "place", label: "その時、どこにいた？ 何の匂いがした？", placeholder: "夏の夕暮れの教室、湿ったアスファルトの匂い" },
+                { name: "secret", label: "あの日、誰にも言えなかった悩みは？", placeholder: "本当は一人になるのが怖かった" },
+                { name: "currentLife", label: "今のあなたは、どんな生活をしている？", placeholder: "東京で営業職をしている。猫を飼っている" },
+                { name: "missing", label: "今、何が足りない気がする？", placeholder: "熱中できること、誰かからの承認" },
+                { name: "habit", label: "あなたの些細な口癖や習慣は？", placeholder: "緊張すると前髪を触る、「まぁいっか」と言う" },
+                { name: "trueMotive", label: "誰にも言ってない、最近の小さな本音は？", placeholder: "本当は少し休みたい" }
+              ].map((field) => (
+                <div key={field.name} className="flex flex-col">
+                  <label className="text-sm text-gray-400 mb-2 tracking-wider">{field.label}</label>
                   <input
                     type="text"
-                    placeholder={q.placeholder}
-                    className="p-3 bg-slate-800/50 border border-slate-700 rounded text-slate-200 focus:outline-none focus:border-slate-500 text-sm"
-                    onChange={(e) => setFormData({ ...formData, [q.key]: e.target.value })}
+                    name={field.name}
+                    value={formData[field.name]}
+                    onChange={handleChange}
+                    required
+                    className="bg-transparent border-b border-gray-700 focus:border-gray-400 outline-none py-2 text-gray-200 transition-colors"
                   />
                 </div>
               ))}
             </div>
-
-            <button
-              onClick={handleGenerate}
-              disabled={isLoading}
-              className="mt-8 px-8 py-4 border border-slate-500 rounded text-slate-200 hover:bg-slate-800 transition-colors tracking-widest text-sm disabled:opacity-50"
-            >
-              {isLoading ? "微弱な信号を受信中..." : "手紙を受信する"}
-            </button>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="w-full flex flex-col items-center opacity-0 animate-[fadeIn_2s_ease-in_forwards]">
-            <p className="text-xs text-slate-500 mb-8 tracking-widest animate-pulse">... Incoming message from another timeline ...</p>
-            <div className="w-full bg-slate-800/30 p-8 rounded border border-slate-700 shadow-2xl">
-              <p className="font-serif leading-[2.5] text-slate-300 whitespace-pre-wrap text-[15px]">
-                {displayedLetter}
-              </p>
-            </div>
             
-            {displayedLetter === letter && (
-              <div className="mt-12 opacity-0 animate-[fadeIn_2s_ease-in_forwards]">
-                <button onClick={() => setStep(1)} className="text-xs text-slate-500 tracking-widest hover:text-slate-300 transition-colors">
-                  通信を切断する
-                </button>
-              </div>
-            )}
+            <button
+              type="submit"
+              className="w-full mt-12 py-4 text-sm tracking-widest text-gray-500 hover:text-gray-200 transition-colors duration-500"
+            >
+              時空を繋ぐ
+            </button>
+          </form>
+        )}
+
+        {(status === "receiving" || status === "tuning" || status === "arrived") && (
+          <div className="h-64 flex items-center justify-center text-gray-400 tracking-widest text-sm animate-pulse">
+            {status === "receiving" && "……受信中"}
+            {status === "tuning" && "波長を合わせています"}
+            {status === "arrived" && "届きました"}
           </div>
         )}
-      </main>
 
-      <style jsx global>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+        {status === "reading" && (
+          <div className="animate-fade-in-up">
+            <div className="paper-texture text-gray-800 p-8 md:p-12 shadow-2xl rounded-sm -rotate-[0.5deg] leading-[2.2] tracking-wide font-letter text-lg min-h-[500px]">
+              <div className="whitespace-pre-wrap">{displayedText}</div>
+            </div>
+            <div className="mt-8 text-center">
+              <p className="text-xs text-gray-600 tracking-widest">この手紙は、この一度しか届きません</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

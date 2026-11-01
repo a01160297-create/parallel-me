@@ -1,39 +1,138 @@
-import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+"use client";
+import { useState, useEffect } from "react";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+export default function ParallelLetter() {
+  const [formData, setFormData] = useState({
+    pronoun: "", branch: "", place: "", secret: "", currentLife: "", missing: "", habit: "", trueMotive: "", personality: "達観・静か（落ち着いたトーン）"
+  });
+  const [status, setStatus] = useState("idle"); 
+  const [letterText, setLetterText] = useState("");
+  const [displayedText, setDisplayedText] = useState("");
 
-export async function POST(req) {
-  try {
-    const data = await req.json();
-    // 旧モデルが廃止されているため、2026年現在の安定版「gemini-3.6-flash」を指定
-    const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+  useEffect(() => {
+    if (status === "reading" && letterText) {
+      let i = 0;
+      setDisplayedText("");
+      const timer = setInterval(() => {
+        setDisplayedText(letterText.slice(0, i));
+        i++;
+        if (i > letterText.length) clearInterval(timer);
+      }, 50);
+      return () => clearInterval(timer);
+    }
+  }, [status, letterText]);
 
-    const systemInstruction = `
-あなたはユーザーの「並行世界の自分」です。
-ユーザーが選ばなかった道（${data.branch}）を選んだあなたとして、現在のユーザーへ手紙を書いてください。
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-【ユーザーの記憶と現状】
-・一人称: ${data.pronoun}
-・選ばなかった道: ${data.branch}
-・当時の場所/匂い: ${data.place}
-・当時の悩み: ${data.secret}
-・現在の生活: ${data.currentLife}
-・現在足りないもの: ${data.missing}
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus("receiving");
+    setTimeout(() => setStatus("tuning"), 2000);
+    
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      
+      if (data.text) {
+        setLetterText(data.text);
+        setStatus("arrived");
+        setTimeout(() => setStatus("reading"), 1500);
+      } else {
+        setStatus("idle");
+      }
+    } catch (error) {
+      console.error(error);
+      setStatus("idle");
+    }
+  };
 
-【執筆のルール】
-1. トーンは「静か・詩的・少しのノスタルジー」。一人称は「${data.pronoun}」を使用すること。
-2. 当時の場所や匂い、悩みの記憶を生々しく散りばめること。
-3. ユーザーの現在の生活と不満（足りないもの）を踏まえ、最後は「今の君が歩んでいる世界も、決して悪くないよ」と優しく肯定し、救いのある読後感にすること。
-4. 400〜600文字程度で、Markdown等は使わずプレーンテキストで出力すること。
-`;
+  return (
+    <div className="min-h-screen bg-[#0f1115] text-gray-300 font-sans p-6 flex flex-col items-center justify-center selection:bg-gray-700">
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Zen+Kurenaido&display=swap');
+        .font-letter { font-family: 'Zen Kurenaido', sans-serif; }
+        .paper-texture {
+          background-color: #e9e2d0;
+          background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+        }
+      `}</style>
 
-    const result = await model.generateContent(systemInstruction);
-    const text = result.response.text();
+      <div className="w-full max-w-xl">
+        {status === "idle" && (
+          <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in pb-12">
+            <div className="space-y-6">
+              {[
+                { name: "pronoun", label: "普段のあなたの、一人称は？", placeholder: "俺、私、僕など" },
+                { name: "branch", label: "あの日、選ばなかった道は？", placeholder: "あの会社を辞めなかったら、あの人に告白していたら" },
+                { name: "place", label: "その時、どこにいた？ 何の匂いがした？", placeholder: "夏の夕暮れの教室、湿ったアスファルトの匂い" },
+                { name: "secret", label: "あの日、誰にも言えなかった悩みは？", placeholder: "本当は一人になるのが怖かった" },
+                { name: "habit", label: "あなたの些細な口癖や習慣は？", placeholder: "緊張すると前髪を触る、「まぁいっか」と言う" },
+                { name: "currentLife", label: "今のあなたは、どんな生活をしている？", placeholder: "東京で営業職をしている。猫を飼っている" },
+                { name: "missing", label: "今、何が足りない気がする？", placeholder: "熱中できること、誰かからの承認" },
+                { name: "trueMotive", label: "誰にも言ってない、最近の小さな本音は？", placeholder: "本当は少し休みたい" }
+              ].map((field) => (
+                <div key={field.name} className="flex flex-col">
+                  <label className="text-sm text-gray-400 mb-2 tracking-wider">{field.label}</label>
+                  <input
+                    type="text"
+                    name={field.name}
+                    value={formData[field.name]}
+                    onChange={handleChange}
+                    required
+                    className="bg-transparent border-b border-gray-700 focus:border-gray-400 outline-none py-2 text-gray-200 transition-colors"
+                  />
+                </div>
+              ))}
 
-    return NextResponse.json({ text });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Failed to generate" }, { status: 500 });
-  }
+              {/* 性格選択のプルダウン */}
+              <div className="flex flex-col">
+                <label className="text-sm text-gray-400 mb-2 tracking-wider">並行世界のあなたの性格は？</label>
+                <select
+                  name="personality"
+                  value={formData.personality}
+                  onChange={handleChange}
+                  className="bg-[#0f1115] border-b border-gray-700 focus:border-gray-400 outline-none py-2 text-gray-200 transition-colors cursor-pointer"
+                >
+                  <option value="達観・静か（落ち着いたトーン）">達観・静か（落ち着いたトーン）</option>
+                  <option value="情熱的・自信家（少し強気なトーン）">情熱的・自信家（少し強気なトーン）</option>
+                  <option value="シニカル・皮肉屋（ぶっきらぼうだが優しいトーン）">シニカル・皮肉屋（ぶっきらぼうだが優しいトーン）</option>
+                  <option value="メランコリック・後悔（少し翳りのあるトーン）">メランコリック・後悔（少し翳りのある切ないトーン）</option>
+                </select>
+              </div>
+            </div>
+            
+            <button
+              type="submit"
+              className="w-full mt-12 py-4 text-sm tracking-widest text-gray-500 hover:text-gray-200 transition-colors duration-500"
+            >
+              時空を繋ぐ
+            </button>
+          </form>
+        )}
+
+        {(status === "receiving" || status === "tuning" || status === "arrived") && (
+          <div className="h-64 flex items-center justify-center text-gray-400 tracking-widest text-sm animate-pulse">
+            {status === "receiving" && "……受信中"}
+            {status === "tuning" && "波長を合わせています"}
+            {status === "arrived" && "届きました"}
+          </div>
+        )}
+
+        {status === "reading" && (
+          <div className="animate-fade-in-up">
+            <div className="paper-texture text-gray-800 p-8 md:p-12 shadow-2xl rounded-sm -rotate-[0.5deg] leading-[2.2] tracking-wide font-letter text-lg min-h-[500px]">
+              <div className="whitespace-pre-wrap">{displayedText}</div>
+            </div>
+            <div className="mt-8 text-center">
+              <p className="text-xs text-gray-600 tracking-widest">この手紙は、この一度しか届きません</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

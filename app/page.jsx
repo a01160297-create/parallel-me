@@ -61,7 +61,7 @@ export default function ParallelLetter() {
         }
       `}</style>
 
-      <div className="w-full max-w-xl">
+      <div className="w-full max-w-xl relative">
         {status === "idle" && (
           <div className="animate-fade-in mb-12 text-center space-y-4">
             <h1 className="text-2xl tracking-[0.2em] text-gray-200 font-light">Parallel Letter</h1>
@@ -126,7 +126,7 @@ export default function ParallelLetter() {
         )}
 
         {(status === "receiving" || status === "tuning" || status === "arrived") && (
-          <div className="h-screen absolute inset-0 flex flex-col items-center justify-center text-gray-400 tracking-[0.3em] text-sm animate-pulse z-50 bg-[#0f1115]">
+          <div className="h-[60vh] flex flex-col items-center justify-center text-gray-400 tracking-[0.3em] text-sm animate-pulse z-50">
             {status === "receiving" && "……受信中"}
             {status === "tuning" && "波長を合わせています"}
             {status === "arrived" && "届きました"}

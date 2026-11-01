@@ -9,6 +9,7 @@ export default function ParallelLetter() {
   const [letterText, setLetterText] = useState("");
   const [displayedText, setDisplayedText] = useState("");
 
+  // ★ここを変更：文字の表示速度をゆっくり（150ms）にしました
   useEffect(() => {
     if (status === "reading" && letterText) {
       let i = 0;
@@ -17,7 +18,7 @@ export default function ParallelLetter() {
         setDisplayedText(letterText.slice(0, i));
         i++;
         if (i > letterText.length) clearInterval(timer);
-      }, 50);
+      }, 150); 
       return () => clearInterval(timer);
     }
   }, [status, letterText]);

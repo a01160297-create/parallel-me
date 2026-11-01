@@ -6,8 +6,8 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 export async function POST(req) {
   try {
     const data = await req.json();
-    // ここをエラーが起きない最新モデル名に修正しています
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    // エラーを回避するため、最も安定している「gemini-pro」にモデル名を変更
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const systemInstruction = `
 あなたはユーザーの「並行世界の自分」です。

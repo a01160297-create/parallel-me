@@ -27,7 +27,10 @@ export default function ParallelLetter() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus("receiving");
-    setTimeout(() => setStatus("tuning"), 2000);
+    
+    setTimeout(() => {
+      setStatus((prev) => prev === "receiving" ? "tuning" : prev);
+    }, 2000);
     
     try {
       const res = await fetch("/api/generate", {
@@ -43,10 +46,12 @@ export default function ParallelLetter() {
         setTimeout(() => setStatus("reading"), 1500);
       } else {
         setStatus("idle");
+        alert("手紙の受信に失敗しました。しばらく待ってから再度お試しください。");
       }
     } catch (error) {
       console.error(error);
       setStatus("idle");
+      alert("通信エラーが発生しました。");
     }
   };
 

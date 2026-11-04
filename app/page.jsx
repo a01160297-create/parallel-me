@@ -9,7 +9,7 @@ export default function ParallelLetter() {
   const [letterText, setLetterText] = useState("");
   const [displayedText, setDisplayedText] = useState("");
 
-  // ★ここを変更：文字の表示速度をゆっくり（150ms）にしました
+  // 文字の表示速度はゆっくり（150ms）のままキープしています
   useEffect(() => {
     if (status === "reading" && letterText) {
       let i = 0;
@@ -18,7 +18,7 @@ export default function ParallelLetter() {
         setDisplayedText(letterText.slice(0, i));
         i++;
         if (i > letterText.length) clearInterval(timer);
-      }, 150); 
+      }, 150);
       return () => clearInterval(timer);
     }
   }, [status, letterText]);
@@ -146,6 +146,18 @@ export default function ParallelLetter() {
             </div>
             <div className="mt-12 mb-8 text-center">
               <p className="text-xs text-gray-600 tracking-[0.2em]">この手紙は、この一度しか届きません</p>
+              
+              {/* 追加：Xシェアボタン */}
+              <div className="mt-8">
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("並行世界の自分から手紙を受け取りました。\n#ParallelLetter\n")}&url=https://parallel-me-pearl.vercel.app`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block px-8 py-3 text-xs tracking-[0.2em] border border-gray-800 text-gray-500 hover:text-gray-200 hover:border-gray-500 transition-colors duration-500 rounded-sm"
+                >
+                  Xでシェアする
+                </a>
+              </div>
             </div>
           </div>
         )}

@@ -1,14 +1,32 @@
-import './globals.css'
+import "./globals.css";
 
 export const metadata = {
-  title: 'Parallel Me - 並行世界の私からの手紙',
-  description: '選ばなかった世界線を生きる自分からの手紙を受信するアプリ',
-}
+  title: 'Parallel Letter',
+  description: '並行世界の自分から手紙が届くサイト',
+  openGraph: {
+    title: 'Parallel Letter',
+    description: 'もしもあの日、違う道を選んでいたら。並行世界のあなたから手紙が届きます。',
+    url: 'https://parallel-me-pearl.vercel.app',
+    siteName: 'Parallel Letter',
+    images: [
+      {
+        url: 'https://parallel-me-pearl.vercel.app/og-image.png',
+        width: 1200,
+        height: 630,
+      },
+    ],
+    locale: 'ja_JP',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
+};
 
 export default function RootLayout({ children }) {
   return (
     <html lang="ja">
-      <body className="bg-slate-900 text-slate-200 min-h-screen">{children}</body>
+      <body className="bg-[#0f1115] text-gray-300">{children}</body>
     </html>
-  )
+  );
 }

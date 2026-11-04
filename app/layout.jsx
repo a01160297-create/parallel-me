@@ -10,7 +10,7 @@ export const metadata = {
     siteName: 'Parallel Letter',
     images: [
       {
-        url: 'https://parallel-me-pearl.vercel.app/Gemini_Generated_Image_u9i9h0u9i9h0u9i9.jpg',
+        url: 'https://parallel-me-pearl.vercel.app/og-image.png',
         width: 1200,
         height: 630,
       },
